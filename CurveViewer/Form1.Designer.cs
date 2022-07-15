@@ -331,6 +331,7 @@
 			// 
 			// label10
 			// 
+			this.label10.AutoSize = true;
 			this.label10.Location = new System.Drawing.Point(0, 0);
 			this.label10.Margin = new System.Windows.Forms.Padding(0, 0, 3, 0);
 			this.label10.Name = "label10";
@@ -340,6 +341,7 @@
 			// 
 			// label13
 			// 
+			this.label13.AutoSize = true;
 			this.label13.Location = new System.Drawing.Point(59, 0);
 			this.label13.Margin = new System.Windows.Forms.Padding(10, 0, 3, 0);
 			this.label13.Name = "label13";
@@ -349,6 +351,7 @@
 			// 
 			// label11
 			// 
+			this.label11.AutoSize = true;
 			this.label11.Location = new System.Drawing.Point(130, 0);
 			this.label11.Margin = new System.Windows.Forms.Padding(24, 0, 3, 0);
 			this.label11.Name = "label11";
@@ -358,6 +361,7 @@
 			// 
 			// label12
 			// 
+			this.label12.AutoSize = true;
 			this.label12.Location = new System.Drawing.Point(272, 0);
 			this.label12.Margin = new System.Windows.Forms.Padding(105, 0, 3, 0);
 			this.label12.Name = "label12";
@@ -788,7 +792,8 @@
 			// 
 			// Form1
 			// 
-			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
+			this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
+			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(1182, 753);
 			this.Controls.Add(this.tableLayoutPanel1);
 			this.Font = new System.Drawing.Font("Yu Gothic UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
@@ -808,6 +813,7 @@
 			this.flowLayoutPanel4.PerformLayout();
 			this.parametersFlowLayoutPanel.ResumeLayout(false);
 			this.flowLayoutPanel6.ResumeLayout(false);
+			this.flowLayoutPanel6.PerformLayout();
 			this.flowLayoutPanel1.ResumeLayout(false);
 			this.flowLayoutPanel1.PerformLayout();
 			this.flowLayoutPanel5.ResumeLayout(false);

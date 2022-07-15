@@ -163,7 +163,8 @@ namespace CurveViewer
                     Draw();
                 }
                 Vec2 mousePos = ViewPointToGraphPoint(new Vec2(e.X, e.Y));
-                mousePosLabel.Text = "(mouseX, mouseY)=(" + mousePos.x.ToString("0.00") + ", " + mousePos.y.ToString("0.00") + ")";
+                //mousePosLabel.Text = "(mouseX, mouseY)=(" + mousePos.x.ToString("0.00") + ", " + mousePos.y.ToString("0.00") + ")";
+                
 
             }
             static void graph_MouseUp(object sender, MouseEventArgs e)
@@ -326,6 +327,7 @@ namespace CurveViewer
                 Pen pen = new Pen(Color.Black, 1);
                 Vec2 viewOriginPoint = GraphPointToViewPoint(new Vec2(0,0));
                 graph.BackColor = backColorButton.BackColor;
+                if(mousePosLabel!=null)mousePosLabel.Text = "(mouseX, mouseY)=(" + g.DpiX.ToString() + ", " + g.DpiY.ToString() + ")";
 
                 int logx = (int)Math.Ceiling(Math.Log10(size.x));
                 int mx = (int)Math.Pow(10, Math.Max(0, -logx+1));
