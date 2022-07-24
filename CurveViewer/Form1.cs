@@ -87,6 +87,10 @@ namespace CurveViewer
             public static Button gridColorButtonX, gridColorButtonY;
             public static Button scaleColorButtonX, scaleColorButtonY;
             public static Button backColorButton;
+            public static CheckBox[] checkBoxes;
+            public static Button[] buttons;
+
+            static readonly string autoSavePath = "GraphData/AutoSave.txt";
 
             static readonly Vec2 maxCenter = new Vec2(1000, 1000);
             static readonly Vec2 minCenter = new Vec2(-1000, -1000);
@@ -106,6 +110,27 @@ namespace CurveViewer
             }
             public static void Init()
             {
+                checkBoxes = new CheckBox[]
+                {
+                    axisDisplayX,axisDisplayY,
+                    gridDisplayX,gridDisplayY,
+                    scaleDisplayX,scaleDisplayY
+                };
+                buttons = new Button[]
+                {
+                    axisColorButtonX,axisColorButtonY,
+                    gridColorButtonX,gridColorButtonY,
+                    scaleColorButtonX,scaleColorButtonY,
+                    backColorButton
+                };
+                foreach (var checkBox in checkBoxes)
+                {
+                    checkBox.CheckedChanged += displayCheckBox_CheckedChanged;
+                }
+                foreach (var button in buttons)
+                {
+                    button.Click += colorButton_Click;
+                }
                 graph.MouseDown += graph_MouseDown;
                 graph.MouseMove += graph_MouseMove;
                 graph.MouseUp += graph_MouseUp;
@@ -114,40 +139,23 @@ namespace CurveViewer
                 sizeTextY.TextChanged += sizeTextY_TextChanged;
                 centerTextX.TextChanged += centerTextX_TextChanged;
                 centerTextY.TextChanged += centerTextY_TextChanged;
-                axisDisplayX.CheckedChanged += display_CheckedChanged;
-                axisDisplayY.CheckedChanged += display_CheckedChanged;
-                gridDisplayX.CheckedChanged += display_CheckedChanged;
-                gridDisplayY.CheckedChanged += display_CheckedChanged;
-                scaleDisplayX.CheckedChanged += display_CheckedChanged;
-                scaleDisplayY.CheckedChanged += display_CheckedChanged;
-                axisColorButtonX.Click += colorButton_Click;
-                axisColorButtonY.Click += colorButton_Click;
-                gridColorButtonX.Click += colorButton_Click;
-                gridColorButtonY.Click += colorButton_Click;
-                scaleColorButtonX.Click += colorButton_Click;
-                scaleColorButtonY.Click += colorButton_Click;
-                backColorButton.Click += colorButton_Click;
-
-                if (!Load("AutoSave.txt")) Reset();
+                
+                if (!Load(autoSavePath)) Reset();
             }
 
             public static void Reset()
-			{
+            {
                 SetCenter(new Vec2(0, 0));
                 SetSize(new Vec2(5, 5));
-                axisDisplayX.Checked = true;
-                axisDisplayY.Checked = true;
-                gridDisplayX.Checked = true;
-                gridDisplayY.Checked = true;
-                scaleDisplayX.Checked = true;
-                scaleDisplayY.Checked = true;
-                axisColorButtonX.BackColor = Color.Black;
-                axisColorButtonY.BackColor = Color.Black;
-                gridColorButtonX.BackColor = Color.Black;
-                gridColorButtonY.BackColor = Color.Black;
-                scaleColorButtonX.BackColor = Color.Black;
-                scaleColorButtonY.BackColor = Color.Black;
-                backColorButton.BackColor = Color.White;
+                foreach(var checkBox in checkBoxes)
+				{
+                    checkBox.Checked = true;
+				}
+                for(int i = 0; i < 6; i++)
+				{
+                    buttons[i].BackColor = Color.Black;
+				}
+                buttons[6].BackColor = Color.White;
                 DeleteAllFunctions();
                 Function.DeleteAllParameters();
                 AddFunction();
@@ -172,160 +180,195 @@ namespace CurveViewer
                         break;
                 }
             }
-            public static void Save(string filename)
-			{
-                if (!File.Exists(filename)) File.Create(filename);
-                StreamWriter sw = new StreamWriter(filename, false,System.Text.Encoding.UTF8);
-                sw.WriteLine(size.x.ToString("0.00"));
-                sw.WriteLine(size.y.ToString("0.00"));
-                sw.WriteLine(center.x.ToString("0.00"));
-                sw.WriteLine(center.y.ToString("0.00"));
-                sw.WriteLine(axisDisplayX.Checked ? 1 : 0);
-                sw.WriteLine(axisDisplayY.Checked ? 1 : 0);
-                sw.WriteLine(gridDisplayX.Checked ? 1 : 0);
-                sw.WriteLine(gridDisplayY.Checked ? 1 : 0);
-                sw.WriteLine(scaleDisplayX.Checked ? 1 : 0);
-                sw.WriteLine(scaleDisplayY.Checked ? 1 : 0);
+            public static bool Save(string filename)
+            {
+                BinaryWriter bw;
+                try
+                {
+                    bw = new BinaryWriter(new FileStream(filename, FileMode.Create));
+                }
+                catch {
+                    return false;
+                }
+
+                string data = "";
+
+                Action<string> Write = str =>
+                {
+                    data += str + ",";
+
+                };
+                Write(size.x.ToString("0.00"));
+                Write(size.y.ToString("0.00"));
+                Write(center.x.ToString("0.00"));
+                Write(center.y.ToString("0.00"));
+                foreach(var checkBox in checkBoxes)
+				{
+                    Write(checkBox.Checked ? "1" : "0");
+				}
+
                 Func<Color, string> ColorToString = color =>
                 {
-                    return color.A + " " + color.R + " " + color.G + " " + color.B;
+                    return color.A + "," + color.R + "," + color.G + "," + color.B;
                 };
-                sw.WriteLine(ColorToString(axisColorButtonX.BackColor));
-                sw.WriteLine(ColorToString(axisColorButtonY.BackColor));
-                sw.WriteLine(ColorToString(gridColorButtonX.BackColor));
-                sw.WriteLine(ColorToString(gridColorButtonY.BackColor));
-                sw.WriteLine(ColorToString(scaleColorButtonX.BackColor));
-                sw.WriteLine(ColorToString(scaleColorButtonY.BackColor));
-                sw.WriteLine(functions.Count);
-                foreach(Function function in functions)
+                foreach(var button in buttons)
 				{
-                    sw.WriteLine(function.diplayCheckBox.Checked ? 1 : 0);
-                    sw.WriteLine(function.formulaText.Text);
-                    sw.WriteLine(ColorToString(function.colorButton.BackColor));
+                    Write(ColorToString(button.BackColor));
 				}
-                sw.WriteLine(Function.parameters.Count);
-                foreach(Function.Parameter parameter in Function.parameters)
-				{
-                    sw.WriteLine(parameter.nameText.Text);
-                    sw.WriteLine(parameter.value.ToString("0.00"));
-                    sw.WriteLine(parameter.min.ToString("0.00"));
-                    sw.WriteLine(parameter.max.ToString("0.00"));
-				}
-                sw.Close();
+                Write(functions.Count.ToString());
+                foreach (Function function in functions)
+                {
+                    Write(function.diplayCheckBox.Checked ? "1" : "0");
+                    Write(function.formulaText.Text);
+                    Write(ColorToString(function.colorButton.BackColor));
+                }
+                Write(Function.parameters.Count.ToString());
+                foreach (Function.Parameter parameter in Function.parameters)
+                {
+                    Write(parameter.nameText.Text);
+                    Write(parameter.value.ToString("0.00"));
+                    Write(parameter.min.ToString("0.00"));
+                    Write(parameter.max.ToString("0.00"));
+                }
+                for (int i = 0; i < data.Length; i++)
+                {
+                    int r = new System.Random().Next(0, 10);
+                    bw.Write((char)(r + (int)'0'));
+                    bw.Write((char)((int)data[i] + r * 10));
+                }
+                bw.Close();
+                return true;
             }
-            static bool TryParseColor(string colorStr,out Color color)
-			{
-                color= new Color();
+            static bool TryParseColor(string colorStr, out Color color)
+            {
+                color = new Color();
                 if (colorStr == null) return false;
-                string[] arr = colorStr.Split(' ');
+                string[] arr = colorStr.Split(',');
                 if (arr.Length != 4) return false;
-                int[] argb=new int[4];
-                
+                int[] argb = new int[4];
                 for (int i = 0; i < 4; i++)
                 {
-                    int tmp;
-                    if (!int.TryParse(arr[i], out tmp)) return false;
-                    argb[i] = tmp;
-                }
-                for (int i = 0; i < 4; i++)
-				{
-                    int a = argb[i];
-                    int b = a;
+                    if (!int.TryParse(arr[i], out argb[i]))
+                    {
+                        return false;
+                    }
                     if (argb[i] < 0 || 255 < argb[i])
                     {
                         return false;
                     }
-				}
-                color = Color.FromArgb(argb[0],argb[1], argb[2], argb[3]);
+                }
+                color = Color.FromArgb(argb[0], argb[1], argb[2], argb[3]);
                 return true;
             }
             public static bool Load(string filename)
 			{
-                if (!File.Exists(filename)) return false;
-                StreamReader sr = new StreamReader(filename);
-                if (sr == null) return false;
+                BinaryReader br;
+                try
+                {
+                    if (!File.Exists(filename)) return false;
+                    br = new BinaryReader(new FileStream(filename, FileMode.Open));
+                }
+                catch
+                {
+                    return false;
+                }
+
+                string data = "";
+                while (true)
+				{
+                    try
+                    {
+                        int r = (int)br.ReadChar() - (int)'0';
+                        data += (char)((int)br.ReadChar() - 10 * r);
+                    }
+                    catch
+                    {
+                        break;
+                    }
+				}
+                br.Close();
+                string[] arr = data.Split(',').ToArray();
+                int cnt = 0;
+                Func<string> Read = () =>
+                {
+					if (cnt < arr.Length)
+					{
+                        return arr[cnt++];
+					}
+                    return "";
+                };
                 double sizex, sizey;
                 double centerx, centery;
-                int dispAxisX, dispAxisY;
-                int dispGridX, dispGridY;
-                int dispScaleX, dispScaleY;
-                Color colorAxisX, colorAxisY;
-                Color colorGridX, colorGridY;
-                Color colorScaleX, colorScaleY;
                 int[] display = new int[6];
-                Color[] color= new Color[6];
-                if (!double.TryParse(sr.ReadLine(), out sizex)) return false;
-                if (!double.TryParse(sr.ReadLine(), out sizey)) return false;
-                if (!double.TryParse(sr.ReadLine(), out centerx)) return false;
-                if (!double.TryParse(sr.ReadLine(), out centery)) return false;
-                for(int i = 0; i < 6; i++)
-				{
-                    if (!int.TryParse(sr.ReadLine(), out display[i]))
+                Color[] color = new Color[7];
+                if (!double.TryParse(Read(), out sizex)) return false;
+                if (!double.TryParse(Read(), out sizey)) return false;
+                if (!double.TryParse(Read(), out centerx)) return false;
+                if (!double.TryParse(Read(), out centery)) return false;
+                for (int i = 0; i < 6; i++)
+                {
+                    if (!int.TryParse(Read(), out display[i]))
                     {
                         return false;
                     }
-				}
-                for (int i = 0; i < 6; i++)
+                }
+                
+                for (int i = 0; i < 7; i++)
                 {
-                    if (!TryParseColor(sr.ReadLine(), out color[i]))
+                    if (!TryParseColor(Read() + "," + Read() + "," + Read() + "," + Read(), out color[i]))
                     {
                         return false;
                     }
                 }
                 int fc;
-                if (!int.TryParse(sr.ReadLine(), out fc)) return false;
+                if (!int.TryParse(Read(), out fc)) return false;
                 int[] funcDisplay = new int[fc];
                 string[] funcFormula = new string[fc];
                 Color[] funcColor = new Color[fc];
                 for (int i = 0; i < fc; i++)
-				{
-                    if (!int.TryParse(sr.ReadLine(), out funcDisplay[i])) return false;
-                    funcFormula[i] = sr.ReadLine();
+                {
+                    if (!int.TryParse(Read(), out funcDisplay[i])) return false;
+                    funcFormula[i] = Read();
                     if (funcFormula[i] == null) return false;
-                    if (!TryParseColor(sr.ReadLine(), out funcColor[i])) return false;
+                    if (!TryParseColor(Read() + "," + Read() + "," + Read() + "," + Read(), out funcColor[i])) return false;
                 }
                 int pc;
-                if (!int.TryParse(sr.ReadLine(), out pc)) return false;
+                if (!int.TryParse(Read(), out pc)) return false;
                 string[] paramName = new string[pc];
                 double[] paramValue = new double[pc];
                 double[] paramMin = new double[pc];
                 double[] paramMax = new double[pc];
-                for(int i = 0; i < pc; i++)
-				{
+                for (int i = 0; i < pc; i++)
+                {
                     double value, min, max;
-                    paramName[i] = sr.ReadLine();
+                    paramName[i] = Read();
                     if (paramName[i] == null) return false;
-                    if (!double.TryParse(sr.ReadLine(), out paramValue[i])) return false;
-                    if (!double.TryParse(sr.ReadLine(), out paramMin[i])) return false;
-                    if (!double.TryParse(sr.ReadLine(), out paramMax[i])) return false;
+                    if (!double.TryParse(Read(), out paramValue[i])) return false;
+                    if (!double.TryParse(Read(), out paramMin[i])) return false;
+                    if (!double.TryParse(Read(), out paramMax[i])) return false;
                 }
-                sr.Close();
                 Reset();
                 DeleteAllFunctions();
                 Function.DeleteAllParameters();
                 SetSize(new Vec2(sizex, sizey));
                 SetCenter(new Vec2(centerx, centery));
-                axisDisplayX.Checked = display[0] == 0 ? false : true;
-                axisDisplayY.Checked = display[1] == 0 ? false : true;
-                gridDisplayX.Checked = display[2] == 0 ? false : true;
-                gridDisplayY.Checked = display[3] == 0 ? false : true;
-                scaleDisplayX.Checked = display[4] == 0 ? false : true;
-                scaleDisplayY.Checked = display[5] == 0 ? false : true;
-                axisColorButtonX.BackColor = color[0];
-                axisColorButtonY.BackColor = color[1];
-                gridColorButtonX.BackColor = color[2];
-                gridColorButtonY.BackColor = color[3];
-                scaleColorButtonX.BackColor = color[4];
-                scaleColorButtonY.BackColor = color[5];
-                for(int i = 0; i < fc; i++)
+                for (int i = 0; i < 6; i++)
+                {
+                    checkBoxes[i].Checked = display[i] == 0 ? false : true;
+                }
+                for(int i = 0; i < 7; i++)
 				{
+                    buttons[i].BackColor = color[i];
+				}
+                for (int i = 0; i < fc; i++)
+                {
                     AddFunction();
                     functions[i].formulaText.Text = funcFormula[i];
                     functions[i].diplayCheckBox.Checked = funcDisplay[i] == 0 ? false : true;
-                    functions[i].colorButton.BackColor=funcColor[i];
-				}
-                for(int i = 0; i < pc; i++)
-				{
+                    functions[i].colorButton.BackColor = funcColor[i];
+                }
+                for (int i = 0; i < pc; i++)
+                {
                     Function.AddParameter();
                     Function.parameters[i].nameText.Text = paramName[i];
                     Function.parameters[i].valueText.Text = paramValue[i].ToString("0.00");
@@ -406,12 +449,7 @@ namespace CurveViewer
                     SetCenter(new Vec2(center.x, num), false);
                     UpDate();
                 }
-            }
-            static void display_CheckedChanged(object sender,EventArgs e)
-			{
-                UpDate();
-			}
-            
+            }            
             //イベントハンドラここまで
 
             static void SetSize(Vec2 s, bool textChange = true)
@@ -456,7 +494,7 @@ namespace CurveViewer
 				{
                     function.Update();
 				}
-                Save("AutoSave.txt");
+                Save(autoSavePath);
                 Draw();
 			}
             public static void Draw()
@@ -722,12 +760,17 @@ namespace CurveViewer
                 if (x[0].value == 1) return new CalcResult(1);
                 if (x[0].value < 0)
                 {
-                    int x1 = (int)x[1].value;
-                    if (x1 != x[1].value) return new CalcResult(0, false);
-                    if (Math.Log(resultMax) < x1 * Math.Log(-x[0].value)) return new CalcResult(0, false);
-                    return new CalcResult(Math.Pow(x[0].value, x1));
+                    if ((int)x[1].value != x[1].value) return new CalcResult(0, false);
+                    if ((int)x[1].value % 2 == 0)
+                    {
+                        if (Math.Log(resultMax) < x[1].value * Math.Log(-x[0].value)) return new CalcResult(0, false);
+                    }
+					else
+					{
+                        if (Math.Log(resultMin) > -x[1].value * Math.Log(-x[0].value)) return new CalcResult(0,false);
+					}
+                    return new CalcResult(Math.Pow(x[0].value, x[1].value));
                 }
-                if(x[0].value<0&&(int)x[1].value!=x[1].value)return new CalcResult(0, false);
                 if (Math.Log(resultMax) < x[1].value * Math.Log(x[0].value)) return new CalcResult(0, false);
                 return new CalcResult(Math.Pow(x[0].value, x[1].value));
             }
@@ -793,7 +836,6 @@ namespace CurveViewer
             //<定数>       := 定数名
             //<一変数関数> := 関数名<factor2>
             //<多変数関数> := 関数名'('<expression>','<expression>[','<expression>...]')'
-
             static class Generator
             {
                 static readonly double delta = 0.01;
@@ -1307,6 +1349,7 @@ namespace CurveViewer
 				{
                     value=(double)bar.Value/100;
                     valueText.Text = value.ToString();
+                    valueText.Refresh();
                     Graph.UpDate();
 				}
                 private void deleteButton_Click(object sender, EventArgs e)
@@ -1360,7 +1403,7 @@ namespace CurveViewer
                 diplayCheckBox.Checked = true;
                 diplayCheckBox.Width = 20;
                 diplayCheckBox.Height = 20;
-                diplayCheckBox.CheckedChanged += diplayCheckBox_CheckedChanged;
+                diplayCheckBox.CheckedChanged += displayCheckBox_CheckedChanged;
                 diplayCheckBox.Margin = new Padding(20, 4, 0, 0);
                 flow.Controls.Add(diplayCheckBox);
                 //formulaLabel
@@ -1394,12 +1437,7 @@ namespace CurveViewer
                 deleteButton.Margin = new Padding(15,0,0,0);
                 flow.Controls.Add(deleteButton);
             }
-
-            //関数のイベントハンドラ
-            void diplayCheckBox_CheckedChanged(object sender, EventArgs e)
-            {
-                Graph.UpDate();
-            }
+            
             void formulaText_TextChanged(object sender, EventArgs e)
             {
                 Graph.UpDate();
@@ -1424,6 +1462,10 @@ namespace CurveViewer
             }
             Graph.Draw();
         }
+        static void displayCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            Graph.UpDate();
+        }
         private void addFunctionButton_Click(object sender, EventArgs e)
         {
             Graph.AddFunction();
@@ -1442,6 +1484,8 @@ namespace CurveViewer
 		}
         private void saveButton_Click(object sender, EventArgs e)
         {
+            saveFileDialog.InitialDirectory = Application.StartupPath + @"GraphData";
+            saveFileDialog.FileName = "";
             saveFileDialog.ShowDialog();
         }
         private void resetButton_Click(object sender, EventArgs e)
@@ -1450,10 +1494,14 @@ namespace CurveViewer
 		}
         private void loadButton_Click(object sender, EventArgs e)
         {
+            openFileDialog.InitialDirectory = Application.StartupPath + @"GraphData";
+            openFileDialog.FileName = "";
             openFileDialog.ShowDialog();
         }
         private void saveImageButton_Click(object sender, EventArgs e)
 		{
+            saveImageFileDialog.InitialDirectory = Application.StartupPath + @"GraphImage";
+            saveImageFileDialog.FileName = "";
             saveImageFileDialog.ShowDialog();
 		}
 
@@ -1464,7 +1512,10 @@ namespace CurveViewer
 
 		private void saveFileDialog_FileOk(object sender, System.ComponentModel.CancelEventArgs e)
 		{
-            Graph.Save(saveFileDialog.FileName);
+			if (!Graph.Save(saveFileDialog.FileName))
+			{
+                MessageBox.Show("failed to save the data", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
 		}
 
 		private void openFileDialog_FileOk(object sender, System.ComponentModel.CancelEventArgs e)

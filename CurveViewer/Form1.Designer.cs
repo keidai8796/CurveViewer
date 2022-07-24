@@ -846,15 +846,15 @@
 			// 
 			// saveFileDialog
 			// 
-			this.saveFileDialog.DefaultExt = "txt";
-			this.saveFileDialog.FileName = "graph";
-			this.saveFileDialog.Filter = "|.txt";
+			this.saveFileDialog.DefaultExt = "gd";
+			this.saveFileDialog.Filter = "Text Files|*.txt|All Files|*.*";
 			this.saveFileDialog.FileOk += new System.ComponentModel.CancelEventHandler(this.saveFileDialog_FileOk);
 			// 
 			// openFileDialog
 			// 
 			this.openFileDialog.DefaultExt = "txt";
-			this.openFileDialog.Filter = "|*.txt";
+			this.openFileDialog.Filter = "Text Files|*.txt|All Files|*.*";
+			this.openFileDialog.InitialDirectory = "GraphData\\";
 			this.openFileDialog.FileOk += new System.ComponentModel.CancelEventHandler(this.openFileDialog_FileOk);
 			// 
 			// Form1
